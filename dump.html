@@ -1,0 +1,129 @@
+<!-- Replace your existing table with this -->
+<div class="card-body">
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <div class="search-box">
+                <input type="text" class="form-control search" id="searchInput"
+                       placeholder="Search by email or ID...">
+                <i class="ri-search-line search-icon"></i>
+            </div>
+        </div>
+        <div class="col-md-6 text-end">
+            <button type="button" class="btn btn-light" id="resetSearch">
+                <i class="ri-refresh-line align-bottom"></i> Reset
+            </button>
+        </div>
+    </div>
+
+    <table class="table table-borderless table-nowrap">
+        <thead>
+        <tr>
+            <th scope="col">Id</th>
+            <th scope="col">Email</th>
+            <th scope="col">Nội dung</th>
+            <th scope="col">Ngày tạo</th>
+            <th scope="col">Trạng thái</th>
+            <th scope="col">Action</th>
+        </tr>
+        </thead>
+        <tbody id="lienHeTableBody">
+        <?php foreach ($LienHes as $lienHe) : ?>
+        <tr>
+            <td><?= $lienHe['id'] ?></td>
+            <td><?= $lienHe['email'] ?></td>
+            <td class="noi-dung"><?= $lienHe['noi_dung'] ?></td>
+            <td><?= $lienHe['ngay_tao'] ?></td>
+            <td>
+                <?php if ($lienHe['trang_thai'] == 1) { ?>
+                <span class="badge bg-success-subtle text-success">Đã xử lí</span>
+                <?php } else { ?>
+                <span class="badge bg-danger-subtle text-danger">Chờ xử lí</span>
+                <?php } ?>
+            </td>
+            <td>
+                <div class="hstack gap-3 fs-15">
+                    <a href="?act=form-sua-lien-he&lien_he_id=<?= $lienHe['id'] ?>" class="link-success">
+                        <i class="ri-edit-2-line"></i>
+                    </a>
+                    <form action="?act=xoa-lien-he" method="post" onsubmit="return confirm('Xoá?')">
+                        <input type="hidden" name="lien_he_id" value="<?= $lienHe['id'] ?>">
+                        <button class="link-danger" style="border: none; background: none">
+                            <i class="ri-delete-bin-5-line"></i>
+                        </button>
+                    </form>
+                </div>
+            </td>
+        </tr>
+        <?php endforeach; ?>
+        </tbody>
+    </table>
+</div>
+
+<!-- Update your JavaScript section -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('searchInput');
+        const resetButton = document.getElementById('resetSearch');
+        const tableBody = document.getElementById('lienHeTableBody');
+        let timeoutId;
+
+        function performSearch() {
+            const searchTerm = searchInput.value.trim();
+
+            if (timeoutId) {
+                clearTimeout(timeoutId);
+            }
+
+            timeoutId = setTimeout(() => {
+                fetch(`?act=search-lien-he&search=${encodeURIComponent(searchTerm)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        tableBody.innerHTML = ''; // Clear current results
+
+                        data.forEach((item) => {
+                            const row = `
+                            <tr>
+                                <td>${item.id}</td>
+                                <td>${item.email}</td>
+                                <td class="noi-dung">${item.noi_dung}</td>
+                                <td>${item.ngay_tao}</td>
+                                <td>
+                                    ${item.trang_thai == 1
+                                ? '<span class="badge bg-success-subtle text-success">Đã xử lí</span>'
+                                : '<span class="badge bg-danger-subtle text-danger">Chờ xử lí</span>'}
+                                </td>
+                                <td>
+                                    <div class="hstack gap-3 fs-15">
+                                        <a href="?act=form-sua-lien-he&lien_he_id=${item.id}" class="link-success">
+                                            <i class="ri-edit-2-line"></i>
+                                        </a>
+                                        <form action="?act=xoa-lien-he" method="post" onsubmit="return confirm('Xoá?')">
+                                            <input type="hidden" name="lien_he_id" value="${item.id}">
+                                            <button class="link-danger" style="border: none; background: none">
+                                                <i class="ri-delete-bin-5-line"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                            tableBody.innerHTML += row;
+                        });
+
+                        // Reapply text truncation
+                        truncateTextByClass("noi-dung", 100);
+                    })
+                    .catch(error => console.error('Error:', error));
+            }, 300);
+        }
+
+        // Search input event listener
+        searchInput.addEventListener('input', performSearch);
+
+        // Reset button event listener
+        resetButton.addEventListener('click', function() {
+            searchInput.value = '';
+            window.location.href = '?act=lien-he'; // Reload the page to show all results
+        });
+    });
+</script>
